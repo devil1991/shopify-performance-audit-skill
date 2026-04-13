@@ -7,7 +7,7 @@ set -e
 SKILL_NAME="shopify-performance-audit"
 SKILL_DIR="$HOME/.agents/skills/$SKILL_NAME"
 SYMLINK_DIR="$HOME/.claude/skills"
-REPO_URL="https://github.com/meetdomaine/shopify-performance-audit-skill.git"
+REPO_URL="https://github.com/devil1991/shopify-performance-audit-skill.git"
 TMP_DIR=$(mktemp -d)
 
 echo "=== Installing Shopify Performance Audit Skill ==="

@@ -13,15 +13,20 @@ A comprehensive Shopify storefront performance auditing skill for Claude Code, C
 
 ## Installation
 
-### Via skills.sh (recommended)
+### Via npx skills (recommended)
 ```bash
-curl -s https://raw.githubusercontent.com/meetdomaine/shopify-performance-audit-skill/main/install.sh | bash
+npx skills add devil1991/shopify-performance-audit-skill
+```
+
+### Via curl installer
+```bash
+curl -s https://raw.githubusercontent.com/devil1991/shopify-performance-audit-skill/main/install.sh | bash
 ```
 
 ### Manual Installation
 ```bash
 # Clone the repo
-git clone https://github.com/meetdomaine/shopify-performance-audit-skill.git
+git clone git@github.com:devil1991/shopify-performance-audit-skill.git
 
 # Create skill directory
 mkdir -p ~/.agents/skills/shopify-performance-audit

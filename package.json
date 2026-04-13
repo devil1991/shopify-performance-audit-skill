@@ -1,0 +1,22 @@
+{
+  "name": "shopify-performance-audit",
+  "version": "1.0.0",
+  "description": "Comprehensive Shopify storefront performance auditing skill for AI coding agents",
+  "keywords": [
+    "shopify",
+    "performance",
+    "web-vitals",
+    "audit",
+    "core-web-vitals",
+    "page-speed",
+    "claude-code",
+    "agent-skill",
+    "ecommerce"
+  ],
+  "author": "Domaine",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devil1991/shopify-performance-audit-skill.git"
+  }
+}
