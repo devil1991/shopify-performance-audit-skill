@@ -77,31 +77,69 @@ are followed. Be specific with numbers — e.g., "FCP can improve from 13s to un
 
 ---
 
-## Recommended Roadmap
+## Implementation Tickets
 
-### Phase 1: Quick Wins (Week 1-2)
-*No-risk changes with immediate impact*
+### SHORT TERM — Quick Wins (Week 1-2)
 
-- [ ] [ticket description]
-- [ ] [ticket description]
+*No-risk, immediately actionable. Any developer can pick these up.*
 
-**Expected impact:** [e.g., "FCP improvement of 5-8 seconds, 30-50 fewer requests"]
+#### A. Code Fixes
 
-### Phase 2: Code Optimization (Week 3-4)
-*Targeted code changes with testing*
+| ID | Title | File(s) | What to Change | Effort | Impact | Risk |
+|----|-------|---------|----------------|--------|--------|------|
+| S1 | [Verb] [specific action] | `[file:line]` | [Exact change to make — be specific: what code to move, what attribute to add, what to wrap in setTimeout] | Low/Med/High ([x]h) | **[Critical/High/Med/Low]** — [expected metric improvement] | Low/Med/High |
+| S2 | ... | ... | ... | ... | ... | ... |
 
-- [ ] [ticket description]
-- [ ] [ticket description]
+#### B. Third-Party / Vendor Actions
 
-**Expected impact:** [e.g., "100+ fewer requests, 50-80KB less JS"]
+| ID | Issue | Vendor/App | What to Do | Effort | Impact |
+|----|-------|-----------|------------|--------|--------|
+| S3 | [Specific problem] | [App name] | [Exact action: remove in admin, contact support about X, disable embed] | Low/Med/High ([x]h) | **[Level]** — [expected improvement] |
 
-### Phase 3: Architecture (Month 2+)
-*Deeper structural improvements*
+**Expected impact after Phase 1:** [e.g., "FCP improvement of 5-8s, 30-50 fewer requests"]
 
-- [ ] [ticket description]
-- [ ] [ticket description]
+---
 
-**Expected impact:** [e.g., "<100 initial requests, <30MB heap, <3s FCP"]
+### MEDIUM TERM — Code Optimization (Week 3-4)
+
+*Requires code changes and QA testing.*
+
+#### A. Code Fixes
+
+| ID | Title | File(s) | What to Change | Effort | Impact | Risk |
+|----|-------|---------|----------------|--------|--------|------|
+| M1 | [Verb] [specific action] | `[file:line]` | [Detailed implementation: what to replace, what pattern to use, what to test afterward] | Low/Med/High ([x]h) | **[Level]** — [expected improvement] | Low/Med/High |
+
+#### B. Third-Party / Vendor Actions
+
+| ID | Issue | Vendor/App | What to Do | Effort | Impact |
+|----|-------|-----------|------------|--------|--------|
+| M2 | [Specific problem] | [App name] | [Action with context] | Low/Med/High ([x]h) | **[Level]** — [expected improvement] |
+
+**Expected impact after Phase 2:** [e.g., "100+ fewer requests, 50-80KB less JS, no cart reloads"]
+
+---
+
+### LONG TERM — Architecture (Month 2+)
+
+*Deeper structural changes requiring planning and coordination.*
+
+| ID | Title | What to Change | Effort | Impact | Risk |
+|----|-------|----------------|--------|--------|------|
+| L1 | [Verb] [specific action] | [Detailed description of architectural change, why it matters, what it replaces] | High ([x]h) | **[Level]** — [expected improvement] | Low/Med/High |
+
+**Expected impact after Phase 3:** [e.g., "<100 initial requests, <30MB heap, <3s FCP"]
+
+---
+
+## Verification Plan
+
+After each phase, re-run the audit and compare:
+1. Total network requests (target: 50% reduction after Phase 1)
+2. FCP/LCP times (target: <3s after Phase 1, <2s after Phase 2)
+3. JS Heap (target: <50MB after Phase 2)
+4. DOM elements (target: <2,000 after Phase 3)
+5. Functional QA: cart operations, checkout, search, mobile nav
 
 ---
 

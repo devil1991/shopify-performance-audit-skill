@@ -452,23 +452,149 @@ Use this structure (see `references/audit-template.md` for the full template):
 [Expandable full list]
 ```
 
-### Output 2: Implementation Plan
+### Output 2: Implementation Plan with Workable Tickets
 
-Organize tickets by timeline with these fields:
+This is the most important output — it turns audit findings into actionable work. Every issue
+found during the audit MUST become a ticket in one of the tables below. Tickets should be
+specific enough to copy directly into any project management tool (Linear, Jira, ClickUp,
+Notion, GitHub Issues, etc.).
+
+#### Ticket Structure
+
+Every ticket must include ALL of these fields:
+
+| Field | Description |
+|-------|-------------|
+| **ID** | Sequential ID per section (S1, S2... / M1, M2... / L1, L2...) |
+| **Title** | Clear action-oriented title starting with a verb (Move, Replace, Remove, Add, Split, Implement) |
+| **File(s)** | Exact file path(s) and line numbers where the change happens. Use `file.liquid:42` format |
+| **What to Change** | Specific description of what to do — not vague ("optimize scripts") but concrete ("move Exponea inline script from `<head>` to before `</body>` and wrap in `setTimeout(fn, 3000)`") |
+| **Effort** | Low (< 1h), Medium (1-4h), or High (4h+) — with hour estimate |
+| **Impact** | Low, Medium, High, or Critical — with expected metric improvement |
+| **Risk** | Low (safe, no functional change), Medium (needs QA), High (could break features) |
+| **Category** | Code Fix, App Config, Vendor Contact, Business Decision, or Architecture |
+
+#### Separate Code-Fixable vs Third-Party Issues
+
+Split tickets into two clear groups so the team knows what they can act on immediately vs. what
+requires external coordination:
+
+**Group A: Issues We Can Fix (Code Changes)**
+These are changes the dev team can implement directly in theme files. Include the exact code
+change or pattern to apply.
+
+**Group B: Issues from Third-Party Apps / Vendors**
+These require reaching out to app vendors, changing app settings in Shopify admin, or making
+business decisions about which apps to keep. Include the vendor name and suggested action.
+
+#### Timeline Organization
+
+Organize all tickets into three phases:
+
+**SHORT TERM (Week 1-2) — Quick Wins, No Risk**
+
+These should be safe, reversible changes anyone on the team can make:
+- Moving scripts from `<head>` to footer with `defer`/`async`
+- Adding `loading="lazy"` to images and iframes
+- Removing duplicate tools (after client approval)
+- Adding missing `preconnect` hints
+
+Use this table format:
 
 ```markdown
-| Ticket ID | Title | Estimate | Impact | Category |
+### SHORT TERM — Quick Wins (Week 1-2)
+
+#### A. Code Fixes
+
+| ID | Title | File(s) | What to Change | Effort | Impact | Risk |
+|----|-------|---------|----------------|--------|--------|------|
+| S1 | Move analytics scripts to footer with defer | `layout/theme.liquid:110-165` | Move Exponea + Hotjar inline `<script>` blocks from `<head>` to before `</body>`. Wrap both in `setTimeout(function(){ ... }, 3000)` to delay execution until after critical rendering. | Low (2h) | **Critical** — unblocks FCP by 3-8s | Low |
+| S2 | Add defer to chat widget script | `layout/theme.liquid:227` | Add `defer` attribute to Gorgias `<script>` tag: `<script defer id="gorgias-chat-widget...` | Low (30m) | **Medium** — reduces render blocking | Low |
+| S3 | Set below-fold images to lazy load | `sections/featured-collection.liquid:45`, `sections/slideshow.liquid:240` | Change `loading: 'eager'` to `loading: 'lazy'` for all images below the first hero section | Low (2h) | **High** — prevents 100+ eager image loads | Low |
+
+#### B. Third-Party / Vendor Actions
+
+| ID | Issue | Vendor/App | What to Do | Effort | Impact |
+|----|-------|-----------|------------|--------|--------|
+| S4 | Duplicate session recording tools installed | Hotjar / Microsoft Clarity | Remove one — recommend keeping Clarity (free, lighter). Disable Hotjar in Shopify admin → Online Store → Themes → Customize → App embeds | Low (1h) | **High** — removes 3-10 requests + JS |
+| S5 | Abnormal request volume from pixel manager | Elevar | Contact Elevar support — 91-118 requests per page is abnormal (typical: 10-25). Likely duplicate event firing or misconfigured data layer | Low (1h) | **Critical** — could eliminate 70+ requests |
 ```
 
-- **Short term (Week 1-2)**: No-risk changes — defer scripts, add lazy loading, remove duplicates
-- **Medium term (Week 3-4)**: Code changes — replace patterns, split bundles, conditional loading
-- **Long term (Month 2+)**: Architecture — facades, service workers, app pruning
+**MEDIUM TERM (Week 3-4) — Code Changes with Testing**
 
-Each ticket should be specific enough to copy directly into Linear/Jira/ClickUp:
-- Exact file paths and line numbers where applicable
-- The specific change to make
-- Expected impact on metrics
-- Risk level (low/medium/high)
+These require actual code modifications and QA:
+- Replacing `location.reload()` with AJAX cart operations
+- Replacing jQuery with native `fetch()`
+- Implementing interaction-based loading (load on scroll/hover)
+- Splitting vendor JS bundles
+- Conditional CSS loading per page type
+
+```markdown
+### MEDIUM TERM — Code Optimization (Week 3-4)
+
+#### A. Code Fixes
+
+| ID | Title | File(s) | What to Change | Effort | Impact | Risk |
+|----|-------|---------|----------------|--------|--------|------|
+| M1 | Replace location.reload() with AJAX cart rebuild | `snippets/footer-scripts.liquid:18,37,119` | Replace all 3 instances of `location.reload()` with: dispatch `cart:build` event and let the theme's existing cart drawer rebuild handle the update. Remove the `if (template-cart) { location.reload() }` guards entirely. Test: add to cart on cart page, verify cart updates without page reload. | Medium (4h) | **High** — eliminates full page reloads | Medium |
+| M2 | Replace jQuery cart operations with native fetch | `snippets/footer-scripts.liquid:4,24,97,111` | Replace `jQuery.post(theme.routes.cartAdd, data)` with `fetch(theme.routes.cartAdd, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })`. Replace `jQuery.getJSON` with `fetch().then(r => r.json())`. Replace `jQuery('#selector')` with `document.querySelector('#selector')`. | Medium (3h) | **Medium** — removes jQuery dependency from cart flow | Medium |
+| M3 | Implement scroll-triggered loading for heavy widgets | `layout/theme.liquid` | Create a `snippets/deferred-scripts.liquid` that uses IntersectionObserver to load Gorgias, UserWay, and Instafeed only when user scrolls past first viewport. Pattern: create invisible sentinel div at 50vh, observe it, load scripts on intersection. | Medium (4h) | **High** — delays 40+ requests until user engages | Low |
+
+#### B. Third-Party / Vendor Actions
+
+| ID | Issue | Vendor/App | What to Do | Effort | Impact |
+|----|-------|-----------|------------|--------|--------|
+| M4 | Clarify personalization platform overlap | Exponea + Dynamic Yield | Both platforms do personalization, A/B testing, and recommendations. Schedule call with client to determine: which owns personalization? Can one be removed? If both needed, ensure they're not running overlapping experiments. | Medium (2h research) | **High** — could remove 8-9 requests |
+```
+
+**LONG TERM (Month 2+) — Architecture Changes**
+
+Deeper structural work:
+- Facade pattern for third-party widgets
+- Cart system consolidation
+- Service worker implementation
+- App pruning after usage review
+- Vendor JS bundle splitting
+
+```markdown
+### LONG TERM — Architecture (Month 2+)
+
+| ID | Title | What to Change | Effort | Impact | Risk |
+|----|-------|----------------|--------|--------|------|
+| L1 | Implement facade pattern for all third-party widgets | Create lightweight placeholder elements (static HTML/CSS) for chat, accessibility, reviews widgets. Load actual widget JS only on user interaction (click, hover, scroll-into-view). This transforms initial load from 500+ requests to <100. | High (8h) | **Very High** — biggest single improvement | Medium |
+| L2 | Consolidate GWP + Tiered Gifts into single cart middleware | Merge the two separate cart manipulation systems in `footer-scripts.liquid` into one unified cart middleware that handles all gift logic in a single cart fetch cycle. Eliminates race conditions and duplicate cart API calls. | High (6h) | **Medium** — cleaner code, fewer cart race conditions | High |
+| L3 | Cart drawer DOM optimization | Current cart drawer adds 2,000+ DOM nodes on open. Implement virtual rendering: only render visible cart items, lazy-render app blocks inside drawer. | High (6h) | **Medium** — reduces DOM explosion and memory usage | Medium |
+```
+
+#### Verification Checklist
+
+Always end the implementation plan with a verification section:
+
+```markdown
+## Verification Plan
+
+After implementing each phase, verify improvements:
+
+1. **Before/After Metrics** — Run the same audit script on the same pages and compare:
+   - Total network requests (target: 50% reduction after Phase 1)
+   - FCP/LCP times (target: under 3s after Phase 1, under 2s after Phase 2)
+   - JS Heap usage (target: under 50MB after Phase 2)
+   - DOM element count (target: under 2,000 after Phase 3)
+
+2. **Functional QA** — For each medium/high risk ticket:
+   - [ ] Add to cart works on all page types
+   - [ ] Cart drawer opens and updates correctly
+   - [ ] Cart page quantity changes work without reload
+   - [ ] Checkout flow completes successfully
+   - [ ] Mobile menu and navigation work
+   - [ ] Search functionality works
+   - [ ] Reviews display on PDP
+
+3. **Monitoring** — After deployment:
+   - Check Shopify's Web Performance dashboard for trend changes
+   - Run Google PageSpeed Insights on mobile for all 4 page types
+   - Monitor real user metrics (CrUX data) over 2-4 weeks
+```
 
 ---
 
