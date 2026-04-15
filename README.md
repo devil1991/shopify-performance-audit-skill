@@ -4,12 +4,13 @@ A comprehensive Shopify storefront performance auditing skill for Claude Code, C
 
 ## What It Does
 
-- **Browser-based metrics collection** — Navigation Timing, Resource Timing, Paint Timing, JS Heap, DOM stats, CLS, layout shifts
+- **Real-user (CrUX) field data via ShopifyQL** — Pulls 30-day p75 LCP/INP/CLS/FCP/TTFB plus distribution buckets by page type × device. Ground truth for Core Web Vitals scoring.
+- **Browser-based lab metrics** — Navigation Timing, Resource Timing, Paint Timing, JS Heap, DOM stats, CLS, layout shifts
 - **Third-party script analysis** — Identifies all external domains, request counts, duplicate/overlapping services
 - **Shopify-specific best practices** — Script loading order, defer/async patterns, image optimization, section rendering
 - **Code-level issue detection** — `location.reload()` patterns, jQuery dependencies, inline scripts, DOM explosion
 - **Mobile-specific auditing** — Hidden images, offscreen iframes, viewport simulation
-- **Actionable output** — Client-facing audit document + implementation tickets (short/medium/long term)
+- **Actionable output** — Client-facing audit document + implementation tickets prioritized by real-user impact (short/medium/long term)
 
 ## Installation
 
@@ -59,6 +60,11 @@ The skill auto-detects available tools:
 1. **Chrome MCP** (best) — Real browser metrics via Chrome extension
 2. **Playwright** (fallback) — Headless browser metrics via bundled script
 3. **Code-only** (minimal) — Theme file anti-pattern detection
+
+On first interaction the skill also asks the user to run 9 **ShopifyQL queries** against the
+`web_performance` dataset to pull real-user CrUX field data. This is the ground truth for
+CWV scoring — lab metrics can be misleading. See
+[`references/shopifyql-queries.md`](references/shopifyql-queries.md) for the full query set.
 
 ## Companion Skills
 

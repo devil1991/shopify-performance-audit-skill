@@ -142,6 +142,19 @@ Always audit these four page types — they represent the critical ecommerce fun
 
 If the user specifies particular pages, audit those instead, but suggest the core four.
 
+#### ⚠️ Ask For Field Data Upfront
+
+**Before running lab audits,** ask the user if they have Shopify Admin access and can run 9
+ShopifyQL queries (see Section 1E below). Real-user CrUX field data is ground truth for Core
+Web Vitals — lab metrics can mislead. Present the 9 queries, wait for CSV exports, and use
+field data to prioritize. Lab audits still provide request counts, DOM size, and third-party
+inventory that field data can't.
+
+Recommended audit ordering:
+1. Ask user to run ShopifyQL queries → export CSVs
+2. While waiting, run lab audit (Chrome MCP or Playwright) on the 4 core pages
+3. Synthesize: use field data for prioritization, lab data for diagnosis
+
 ### 1B. Browser Metrics Collection Script
 
 When Chrome MCP is available, execute this JavaScript on each page after waiting 5-8 seconds for
@@ -267,6 +280,170 @@ On the PDP, click "Add to Cart" and capture:
 - Memory before and after
 - Whether any upsell/cross-sell popups appear before the drawer (UX friction)
 - Network requests triggered by cart open
+
+### 1E. Real-User Field Data (Shopify Analytics / ShopifyQL)
+
+**CRITICAL:** Lab metrics (Chrome/Playwright) can be misleading — headless browser tab scheduling
+inflates FCP/LCP measurements. Real-user CrUX field data is the ground truth for Core Web Vitals
+scoring. **Always collect this alongside lab data** when the user has Shopify Admin access.
+
+Ask the user to run these 9 queries in **Shopify Admin → Analytics → Reports → Custom Report**
+(the ShopifyQL query editor) and export each as CSV. Dataset: `web_performance`.
+
+**Field naming quirk:** most metrics use `<metric>_p75_ms` (e.g. `lcp_p75_ms`), but CLS uses
+`p75_cls` because it's a score, not milliseconds.
+
+**Distribution arrays** come back as `[total_sessions, good_sessions, ni_sessions, poor_sessions]`.
+
+#### Query 1 — LCP p75 Daily Trend (30d)
+
+```shopifyql
+FROM web_performance
+SHOW lcp_p75_ms, lcp_distribution
+GROUP BY day
+TIMESERIES day
+WITH TOTALS
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY day ASC
+LIMIT 1000
+VISUALIZE lcp_p75_ms TYPE line
+```
+
+#### Query 2 — INP p75 Daily Trend (30d)
+
+```shopifyql
+FROM web_performance
+SHOW inp_p75_ms, inp_distribution
+GROUP BY day
+TIMESERIES day
+WITH TOTALS
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY day ASC
+LIMIT 1000
+VISUALIZE inp_p75_ms TYPE line
+```
+
+#### Query 3 — CLS p75 Daily Trend (30d)
+
+```shopifyql
+FROM web_performance
+SHOW p75_cls, cls_distribution
+GROUP BY day
+TIMESERIES day
+WITH TOTALS
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY day ASC
+LIMIT 1000
+VISUALIZE p75_cls TYPE line
+```
+
+#### Query 4 — FCP p75 Daily Trend (30d)
+
+```shopifyql
+FROM web_performance
+SHOW fcp_p75_ms, fcp_distribution
+GROUP BY day
+TIMESERIES day
+WITH TOTALS
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY day ASC
+LIMIT 1000
+VISUALIZE fcp_p75_ms TYPE line
+```
+
+#### Query 5 — TTFB p75 Daily Trend (30d)
+
+```shopifyql
+FROM web_performance
+SHOW ttfb_p75_ms, ttfb_distribution
+GROUP BY day
+TIMESERIES day
+WITH TOTALS
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY day ASC
+LIMIT 1000
+VISUALIZE ttfb_p75_ms TYPE line
+```
+
+#### Query 6 — All CWVs by Page Type
+
+```shopifyql
+FROM web_performance
+SHOW lcp_p75_ms, inp_p75_ms, p75_cls, fcp_p75_ms, ttfb_p75_ms
+GROUP BY page_type
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY lcp_p75_ms DESC
+LIMIT 50
+```
+
+#### Query 7 — All CWVs by Device Type
+
+```shopifyql
+FROM web_performance
+SHOW lcp_p75_ms, inp_p75_ms, p75_cls, fcp_p75_ms, ttfb_p75_ms
+GROUP BY device_type
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+LIMIT 10
+```
+
+#### Query 8 — Page × Device Cross-Tab (most diagnostic view)
+
+```shopifyql
+FROM web_performance
+SHOW lcp_p75_ms, inp_p75_ms, p75_cls, fcp_p75_ms
+GROUP BY page_type, device_type
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+ORDER BY lcp_p75_ms DESC
+LIMIT 100
+```
+
+#### Query 9 — Distribution Buckets (%  of sessions by rating)
+
+```shopifyql
+FROM web_performance
+SHOW lcp_distribution, inp_distribution, cls_distribution
+GROUP BY page_type, device_type
+SINCE startOfDay(-30d) UNTIL endOfDay(-1d)
+LIMIT 100
+```
+
+#### Field Data Thresholds (CWV standard)
+
+| Metric | 🟢 Good | 🟡 Needs Improvement | 🔴 Poor |
+|--------|---------|---------------------|---------|
+| LCP | ≤ 2,500ms | 2,500-4,000ms | > 4,000ms |
+| INP | ≤ 200ms | 200-500ms | > 500ms |
+| CLS | ≤ 0.1 | 0.1-0.25 | > 0.25 |
+| FCP | ≤ 1,800ms | 1,800-3,000ms | > 3,000ms |
+| TTFB | ≤ 800ms | 800-1,800ms | > 1,800ms |
+
+#### How to Use the Results
+
+1. **Reality-check lab findings.** If lab says "FCP 15s" but field says "FCP 1.2s", trust field.
+   Lab was noise.
+2. **Prioritize by impact.** Sessions × poor % = user impact. Pages with high traffic AND high
+   poor % are top priority, even if p75 looks borderline.
+3. **Distribution > p75.** A page with p75=2,800ms but 80% good + 5% poor is healthier than a
+   page with p75=2,400ms and 15% poor. Always pull distribution buckets.
+4. **Cross-tab reveals patterns.** Desktop-only CLS often indicates wide-viewport banners;
+   mobile-only INP often indicates touch handler overhead.
+5. **Use weekly trend to verify fixes.** Field data lags ~7-14 days due to CrUX aggregation
+   window. Re-run queries weekly after deploying optimizations.
+
+#### If the User Doesn't Have Admin Access
+
+Fall back to PageSpeed Insights API for per-URL CrUX data:
+
+```bash
+curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=<URL>&strategy=mobile&category=performance" \
+  | jq '.loadingExperience.metrics'
+```
+
+Returns: `LARGEST_CONTENTFUL_PAINT_MS`, `INTERACTION_TO_NEXT_PAINT`,
+`CUMULATIVE_LAYOUT_SHIFT_SCORE`, `FIRST_CONTENTFUL_PAINT_MS`, `EXPERIMENTAL_TIME_TO_FIRST_BYTE`.
+Each has `percentile` (p75) and `category` (FAST/AVERAGE/SLOW).
+
+Less granular than ShopifyQL (no page_type or device breakdown) but works without admin access.
 
 ---
 
@@ -771,3 +948,14 @@ This skill works alongside other Domaine and Shopify skills:
   Use when you need to look up Shopify API behavior or platform capabilities.
 - **`solutions-engineering`** — For scoping and estimation patterns.
   Use when structuring the implementation plan and LOE estimates.
+
+---
+
+## Reference Files
+
+- [`references/shopifyql-queries.md`](references/shopifyql-queries.md) — The 9 ShopifyQL queries
+  for real-user CWV data, with thresholds, naming quirks, and fallback (PSI API).
+- [`references/known-services.md`](references/known-services.md) — Database of common third-party
+  services with request patterns, typical counts, and deferral strategies.
+- [`references/audit-template.md`](references/audit-template.md) — Client-facing audit document
+  template.
