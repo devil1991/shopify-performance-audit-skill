@@ -591,6 +591,61 @@ Every issue must be categorized as one of:
 
 ## Phase 4: Output Generation
 
+### 🗂️ Output Doc Structure — Parent/Child Hierarchy
+
+**Always split audit output into two parent sections with index subpages.** Flat docs with 10+
+pages buries findings — hierarchy forces separation of raw data from recommendations and gives
+readers a navigable TOC.
+
+Root structure:
+```
+📊 Executive Summary             [root — cross-cutting 1-page summary]
+📈 Metrics & Data                [parent with index table]
+    🧪 Lab Metrics (Chrome/Playwright)
+    📈 Real-User CWVs (30-Day)   [from ShopifyQL Queries 1-5]
+    🎯 Page × Device Hit List    [from Query 8 + distribution]
+    📊 Distribution Buckets      [from Query 9]
+    🔌 Third-Party Services
+    📦 Weight/Bandwidth Analysis (PDP or other heavy templates)
+    📎 Appendix: ShopifyQL Queries
+🛠️ Implementation & Fixes        [parent with index table]
+    🚨 Critical Issues (Revised w/ Field Data)
+    🗺️ Implementation Roadmap
+    ❓ Decisions & Verification
+```
+
+#### Rules
+
+1. **Executive Summary stays at root** — cross-cutting, users land here first
+2. **Metrics & Data = raw findings only** — lab captures, field data, source queries,
+   distribution tables. No recommendations.
+3. **Implementation & Fixes = action items only** — issues, tickets, roadmap, client decisions,
+   QA checklist. No raw data dumps (reference the Metrics pages instead).
+4. **Each parent page is an index** — 1-sentence section purpose + table of children with
+   1-2 line descriptions and "what question it answers". Example:
+
+   | Page | What it covers | Answers |
+   |------|---------------|---------|
+   | 🎯 Page × Device Hit List | Cross-tab every page_type × device_type ranked by sessions × poor % | Where do the fires burn hottest? |
+
+5. **Source queries live next to their data.** Paste the ShopifyQL query above the tables it
+   produced. Reader can re-run independently.
+
+#### ClickUp Implementation
+
+When using `mcp__*__clickup_create_document_page`:
+- Create parent pages first (root-level, no `parent_page_id`)
+- Create child pages with `parent_page_id` set to parent's returned ID
+- `clickup_update_document_page` **does NOT** support reparenting — get hierarchy right on
+  creation or recreate under new parent
+
+#### Notion / Google Docs
+
+Same pattern applies. In Notion use a toggle or sub-page per child. In Google Docs use a
+multi-page doc with clear H1 section dividers and a linked TOC at the top.
+
+See `references/output-structure.md` for ready-to-paste index page templates.
+
 ### Output 1: Client-Facing Audit Document
 
 Use this structure (see `references/audit-template.md` for the full template):
